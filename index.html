@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        
+        .wrapUl {
+            display: none;
+        }
+        .open{
+            display: block;
+        }
+        .ulInput {
+            width: 90%;
+            margin-top: 10px;
+            height: 100px;
+        }
+        .buttons {
+            margin: 10px 0;
+        }
+        .container {
+            width: 900px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+            <div class="buttons">
+                <button class="btn" onclick="addNewElement('a', 'CreateLink')" >Ссылка</button>
+                <button class="btn" onclick="addNewElement('b','bold')" >Жирный</button>
+                <button class="btn" onclick="addNewElement('i','italic')" >Курсив</button>
+                <input type="file" onchange="addImg(this)">
+            </div>
+
+            <label for="phone">Выберите Тег:</label>
+            <select id="select" onchange="selectedTag(this.value)" name="phone">
+                <option selected="selected" disabled="disabled">Выбор:</option>
+                <option value="h1">Заголовок H1</option>
+                <option value="h2">Заголовок H2</option>
+                <option value="h3">Заголовок H3</option>
+                <option value="h4">Заголовок H4</option>
+                <option value="p">Параграф</option>
+                <option value="ul">Список</option>
+            </select>
+            <button class="btn" onclick="addTag ()">Добавить</button>
+            <button class="btnRemove" onclick="removeElement()">Удалить</button>
+            <!-- <button class="btnRemove" >Удалить</button> -->
+           
+           
+            
+            <div class="form">
+                <textarea name="example" id="textInput" class="ulInput" type="text" value=""> </textarea>
+            </div>
+            <div class="wrapUl">
+                <button class="btn addNewInputBtn" id="addNewInputBtn" onclick="addNewInput()" >+</button>
+                <button class="btn addNewInputBtn" onclick="addTag ()">Добавить</button>
+            </div>
+
+          
+            
+
+
+
+            <div class="container"></div>
+            
+
+<script>
+    // методы https://snipp.ru/php/contenteditable#link-tabulyaciya
+    var safe = [];
+    let wrapUl = document.querySelector('.wrapUl')
+    var textInput = document.querySelector('#textInput')
+    var linkInput = document.querySelector('#linkInput')
+    var addNewInputBtn = document.querySelector('#addNewInputBtn')
+    var saveLinkBtn = document.querySelector('#saveLinkBtn')
+    var saveBoldBtn = document.querySelector('#saveBoldBtn')
+    var btnRemove = document.querySelector('.btnRemove')
+    var container = document.querySelector('.container')
+    var form = document.querySelector('.form')
+    let btn = document.querySelector('.btn')
+    var selectedId;
+
+    function removeElement(){
+        safe.forEach(function(item, index, array){
+            item.addEventListener('click', ()=>{
+                item.remove()
+            })
+        })
+    }
+
+    function addImg(input) {
+
+        let file = input.files[0];
+        let img = document.createElement('img');
+        img.setAttribute('src', `img/${file.name}`);
+        let str1 = file.name;
+        str1 = str1.replace('.jpg', '');
+        img.setAttribute('alt', str1)
+        container.appendChild(img);
+        setTimeout(input.value = "" , 1000)
+
+    }
+
+    function addNewElement(tag,action,url = null) {
+        safe.forEach(function(item, index, array) {
+            item.setAttribute('contenteditable', '')
+            var range = getRangeObject();
+            if(tag == 'a'){
+                var url = prompt('Введите URL', '');
+            }     
+           
+            let b = document.createElement(tag);
+            document.execCommand(action, false, url);
+            b.innerHTML =  range;
+            range.appendChild(b);
+        })
+    }
+
+
+    function modify(e){
+        let tag = Object.values(e.path)
+        let tagTextHTML = tag[0]
+        tagTextHTML.setAttribute('contenteditable', '')
+
+        tagTextHTML.addEventListener('mouseout', (e)=>{ 
+                    
+            tagTextHTML.removeAttribute('contenteditable')
+        })
+        
+    }
+  
+    function selectedTag(tag){
+        selectedId = tag
+        if(tag == 'ul'){
+            wrapUl.classList.add('open')
+        }else{
+            wrapUl.classList.remove('open')
+        }
+    }
+//---------------------------------------------------------------------------
+// добавляем новый инпут для списка ul 
+    function addNewInput(){
+        var input;
+        input = document.createElement("textarea");
+        input.type = "text";
+        input.classList.add('ulInput')
+        form.appendChild(input);
+    }
+
+    function addInputLi (div){
+        container.appendChild(div) 
+            var inputAllUl = document.querySelectorAll('.ulInput')
+            inputAllUl.forEach(function(item, i, arr){ 
+                let li = document.createElement('li');
+                li.innerHTML = item.value;
+                div.appendChild(li);
+
+                setTimeout(item.value = "" , 1000)
+                if(i != 0){
+                    item.remove()
+                }
+            })
+    }
+//---------------------------------------------------------------------------
+
+    function addTag (){            
+        let div = document.createElement(selectedId);
+
+        if(selectedId == 'ul'){
+            addInputLi(div)
+            safe.push(div)
+        }else{
+        div.innerHTML = textInput.value;
+        container.appendChild(div);
+        }
+        div.addEventListener('click', modify)
+        safe.push(div)
+    
+
+       
+        setTimeout(textInput.value = "" , 1000)
+    }
+            
+//---------------------------------------------------------------------------
+
+        
+
+//===========================================================================
+// метод для работы с выделением текста. Работает поэтому не трогать
+    function getRangeObject(win) { //Gets the first range object
+        win = win || window;
+        if (win.getSelection) { // Firefox/Chrome/Safari/Opera/IE9
+        try {
+            return win.getSelection().getRangeAt(0); //W3C DOM Range Object
+        } catch (e) { /*If no text is selected an exception might be thrown*/ }
+        } else if (win.document.selection) { // IE8
+        var range = win.document.selection.createRange(); //Microsoft TextRange Object
+        return fixIERangeObject(range, win);
+        }
+        return null;
+    }
+//===========================================================================
+    </script>
+</body>
+</html>
